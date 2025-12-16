@@ -46,6 +46,7 @@ export function LivePreview({
 
   useEffect(() => {
     if (!isPlaying || isAtEnd) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (isAtEnd) setIsPlaying(false);
       return;
     }
@@ -54,6 +55,7 @@ export function LivePreview({
   }, [isPlaying, isAtEnd, onStep, cursor]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsPlaying(false);
   }, [totalChunks]);
 

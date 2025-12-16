@@ -172,28 +172,31 @@ export function FlightLog({
     );
   }
 
-  let chunkOffset = 0;
   const getChunkCount = (entry) => timeline.getChunkCount(entry);
+
+  const entryElements = [];
+  let chunkOffset = 0;
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
+    const chunkStart = chunkOffset;
+    chunkOffset += getChunkCount(entry);
+    entryElements.push(
+      <FlightLogEntry
+        key={i}
+        entry={entry}
+        entryIndex={i}
+        chunkStart={chunkStart}
+        cursor={cursor}
+        canDelete={timeline.canDeleteEntry(i)}
+        onDelete={onDeleteEntry}
+        getChunkCount={getChunkCount}
+      />,
+    );
+  }
 
   return (
     <div className="flight-log" ref={logRef}>
-      {entries.map((entry, i) => {
-        const chunkStart = chunkOffset;
-        chunkOffset += getChunkCount(entry);
-
-        return (
-          <FlightLogEntry
-            key={i}
-            entry={entry}
-            entryIndex={i}
-            chunkStart={chunkStart}
-            cursor={cursor}
-            canDelete={timeline.canDeleteEntry(i)}
-            onDelete={onDeleteEntry}
-            getChunkCount={getChunkCount}
-          />
-        );
-      })}
+      {entryElements}
       {availableActions.length > 0 &&
         (showRawInput ? (
           <div className="raw-input-form">

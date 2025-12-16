@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useEffectEvent } from "react";
+import React, { useRef, useEffect, useEffectEvent, useState } from "react";
 import { EditorView, keymap } from "@codemirror/view";
 import { javascript } from "@codemirror/lang-javascript";
 import { syntaxHighlighting, HighlightStyle } from "@codemirror/language";
@@ -41,6 +41,7 @@ const minimalTheme = EditorView.theme(
 );
 
 export function CodeEditor({ defaultValue, onChange, label }) {
+  const [initialDefaultValue] = useState(defaultValue);
   const containerRef = useRef(null);
 
   const onEditorChange = useEffectEvent((doc) => {
@@ -57,7 +58,7 @@ export function CodeEditor({ defaultValue, onChange, label }) {
     });
 
     const editor = new EditorView({
-      doc: defaultValue,
+      doc: initialDefaultValue,
       extensions: [
         minimalTheme,
         syntaxHighlighting(highlightStyle),
@@ -71,7 +72,7 @@ export function CodeEditor({ defaultValue, onChange, label }) {
     });
 
     return () => editor.destroy();
-  }, []);
+  }, [initialDefaultValue]);
 
   return (
     <div className="pane">

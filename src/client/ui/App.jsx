@@ -94,7 +94,7 @@ function EmbedModal({ code, onClose }) {
   const textareaRef = useRef(null);
   const [copied, setCopied] = useState(false);
 
-  const embedCode = useMemo(() => {
+  const [embedCode] = useState(() => {
     const base = window.location.origin + window.location.pathname.replace(/\/$/, "");
     const id = Math.random().toString(36).slice(2, 6);
     return `<div id="rsc-${id}" style="height: 500px;"></div>
@@ -179,6 +179,7 @@ export function App() {
   }, [workspaceCode]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLiveCode(workspaceCode);
     if (iframeRef.current?.contentWindow) {
       iframeRef.current.contentWindow.postMessage(
