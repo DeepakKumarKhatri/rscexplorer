@@ -2,6 +2,42 @@ import { test, expect, beforeAll, afterAll, afterEach } from "vitest";
 import { createHelpers, launchBrowser, type TestHelpers } from "./helpers.ts";
 import type { Browser, Page } from "playwright";
 
+const ACTION_ERROR_SERVER = `import { Button } from './client'
+
+export default function App() {
+  return (
+    <div>
+      <h1>Action Error</h1>
+      <Button failAction={failAction} />
+    </div>
+  )
+}
+
+async function failAction() {
+  'use server'
+  throw new Error('Action failed intentionally')
+}`;
+
+const ACTION_ERROR_CLIENT = `'use client'
+
+import { useTransition } from 'react'
+
+export function Button({ failAction }) {
+  const [isPending, startTransition] = useTransition()
+
+  const handleClick = () => {
+    startTransition(async () => {
+      await failAction()
+    })
+  }
+
+  return (
+    <button onClick={handleClick} disabled={isPending}>
+      {isPending ? 'Running...' : 'Trigger Failing Action'}
+    </button>
+  )
+}`;
+
 let browser: Browser;
 let page: Page;
 let h: TestHelpers;
@@ -21,7 +57,7 @@ afterEach(async () => {
 });
 
 test("action error - throwing action shows error in entry and clears pending state", async () => {
-  await h.load("actionerror");
+  await h.loadCode(ACTION_ERROR_SERVER, ACTION_ERROR_CLIENT);
 
   // Render completes
   expect(await h.stepAll()).toMatchInlineSnapshot(`

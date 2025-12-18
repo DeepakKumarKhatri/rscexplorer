@@ -17,6 +17,7 @@ type WaitForOptions = {
 
 export type TestHelpers = {
   load: (sample: string) => Promise<void>;
+  loadCode: (server: string, client: string) => Promise<void>;
   step: () => Promise<string | null>;
   stepAll: () => Promise<string | null>;
   stepInfo: () => Promise<string>;
@@ -40,6 +41,23 @@ export function createHelpers(page: Page): TestHelpers {
 
   async function load(sample: string): Promise<void> {
     await page.goto(`http://localhost:5599/?s=${sample}`);
+    // Wait for iframe to load and get frame reference
+    const iframe = page.frameLocator("iframe");
+    frameRef = iframe;
+    // Wait for content inside iframe
+    await iframe.getByTestId("flight-entry").first().waitFor({ timeout: 10000 });
+    await page.waitForTimeout(100);
+    prevRowTexts = [];
+    prevStatuses = [];
+    prevPreview = await getPreviewText();
+    previewAsserted = true;
+  }
+
+  async function loadCode(server: string, client: string): Promise<void> {
+    const json = JSON.stringify({ server, client });
+    // btoa with UTF-8 encoding
+    const encoded = btoa(unescape(encodeURIComponent(json)));
+    await page.goto(`http://localhost:5599/?c=${encodeURIComponent(encoded)}`);
     // Wait for iframe to load and get frame reference
     const iframe = page.frameLocator("iframe");
     frameRef = iframe;
@@ -290,6 +308,7 @@ export function createHelpers(page: Page): TestHelpers {
 
   return {
     load,
+    loadCode,
     step,
     stepAll,
     stepInfo,
