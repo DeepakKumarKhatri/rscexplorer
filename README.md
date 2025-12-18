@@ -10,6 +10,10 @@ It lets you inspect the RSC stream step by step and observe the React tree that 
 
 This is a hobby project and is not affiliated with or endorsed by any person, living or dead.
 
+## Blog Post
+
+Read [Introducing RSC Explorer](https://overreacted.io/introducing-rsc-explorer/) for an overview of the tool and why I made it.
+
 ## Examples
 
 - [Hello World](https://rscexplorer.dev/?s=hello)
