@@ -54,6 +54,7 @@ export function Workspace({
   }
 
   const timeline = session?.timeline ?? loadingTimeline;
+
   const { entries, cursor, totalChunks, isAtStart, isAtEnd, isStreaming } = useSyncExternalStore(
     timeline.subscribe,
     timeline.getSnapshot,

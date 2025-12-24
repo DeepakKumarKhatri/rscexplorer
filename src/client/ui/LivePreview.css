@@ -55,6 +55,10 @@
   color: #ffd54f;
 }
 
+.LivePreview-controlBtn--playing:hover:not(:disabled) {
+  color: #ffe566;
+}
+
 .LivePreview-controlBtn--step {
   background: #ffd54f;
   color: #000;

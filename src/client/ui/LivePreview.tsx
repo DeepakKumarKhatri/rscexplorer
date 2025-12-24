@@ -73,18 +73,11 @@ export function LivePreview({
 
   useEffect(() => {
     if (!isPlaying || isAtEnd) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (isAtEnd) setIsPlaying(false);
       return;
     }
     const timer = setTimeout(() => onStep(), 300);
     return () => clearTimeout(timer);
   }, [isPlaying, isAtEnd, onStep, cursor]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsPlaying(false);
-  }, [totalChunks]);
 
   const showPlaceholder = entries.length === 0 || cursor === 0;
 
@@ -94,7 +87,6 @@ export function LivePreview({
     onStep();
   };
   const handleSkip = (): void => {
-    setIsPlaying(false);
     onSkip();
   };
   const handleReset = (): void => {
@@ -131,9 +123,9 @@ export function LivePreview({
             </svg>
           </button>
           <button
-            className={`LivePreview-controlBtn${isPlaying ? " LivePreview-controlBtn--playing" : ""}`}
+            className={`LivePreview-controlBtn${isPlaying && !isAtEnd ? " LivePreview-controlBtn--playing" : ""}`}
             onClick={handlePlayPause}
-            disabled={isLoading || isAtEnd}
+            disabled={isLoading}
             aria-label={isPlaying ? "Pause" : "Play"}
             title={isPlaying ? "Pause" : "Play"}
           >

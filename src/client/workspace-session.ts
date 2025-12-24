@@ -98,6 +98,9 @@ export class WorkspaceSession {
       callServer: this.callServer.bind(this),
     });
     this.timeline.addAction(actionName, argsDisplay, stream);
+    if (stream.error) {
+      throw stream.error;
+    }
     return stream;
   }
 
