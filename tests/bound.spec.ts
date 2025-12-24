@@ -105,7 +105,8 @@ test("bound sample - three concurrent actions", async () => {
 
     Same action, different bound greetings:
 
-    GreetHello, Alice!
+    Greet
+    Hello, Alice!
     Greet
     Greet"
   `,
@@ -119,8 +120,10 @@ test("bound sample - three concurrent actions", async () => {
 
     Same action, different bound greetings:
 
-    GreetHello, Alice!
-    GreetHowdy, Bob!
+    Greet
+    Hello, Alice!
+    Greet
+    Howdy, Bob!
     Greet"
   `,
   );
@@ -133,9 +136,12 @@ test("bound sample - three concurrent actions", async () => {
 
     Same action, different bound greetings:
 
-    GreetHello, Alice!
-    GreetHowdy, Bob!
-    GreetHey, Charlie!"
+    Greet
+    Hello, Alice!
+    Greet
+    Howdy, Bob!
+    Greet
+    Hey, Charlie!"
   `,
   );
 });

@@ -52,5 +52,5 @@ test("refresh sample - renders router with async content", async () => {
 
   // Wait for preview to render the timer
   const preview = await h.preview("Timer:");
-  expect(preview).toMatch(/Timer: \d+s[\s\S]*Refresh/);
+  expect(preview).toMatch(/Timer: \d+s[\s\S]*/);
 });

@@ -99,7 +99,7 @@ export function Form({ greetAction }) {
         <input
           name="name"
           placeholder="Enter your name"
-          style={{ padding: '8px 12px', borderRadius: 4, border: '1px solid #ccc' }}
+          style={{ flex: 1, minWidth: 0, padding: '8px 12px', borderRadius: 4, border: '1px solid #ccc' }}
         />
         <button disabled={isPending}>
           {isPending ? 'Sending...' : 'Greet'}
@@ -177,10 +177,10 @@ export function Router({ initial, refreshAction }) {
 
   return (
     <div style={{ opacity: isPending ? 0.7 : 1 }}>
-      {content}
-      <button onClick={refresh} disabled={isPending} style={{ marginTop: 12 }}>
+      <button onClick={refresh} disabled={isPending} style={{ marginBottom: 12 }}>
         {isPending ? 'Refreshing...' : 'Refresh'}
       </button>
+      {content}
     </div>
   )
 }`,
@@ -409,10 +409,10 @@ export function Greeter({ action }) {
   }
 
   return (
-    <form action={handleSubmit} style={{ marginBottom: 8 }}>
-      <input name="name" placeholder="Your name" required />
+    <form action={handleSubmit} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+      <input name="name" placeholder="Your name" required style={{ flex: 1, maxWidth: 120, minWidth: 0, padding: '4px 8px' }} />
       <button>Greet</button>
-      {result && <span style={{ marginLeft: 8 }}>{result}</span>}
+      {result && <span>{result}</span>}
     </form>
   )
 }`,
