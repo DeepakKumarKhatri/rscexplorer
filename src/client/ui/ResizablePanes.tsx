@@ -6,6 +6,7 @@ import React, {
   type ReactNode,
   type MouseEvent as ReactMouseEvent,
   type TouchEvent as ReactTouchEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import "./ResizablePanes.css";
 
@@ -17,15 +18,16 @@ type ResizablePanesProps = {
 };
 
 // Constants for sizing constraints
-const MIN_SIZE_PERCENT = 20; // Minimum 20% for any pane
-const MAX_SIZE_PERCENT = 80; // Maximum 80% for any pane
+const MIN_SIZE_PERCENT = 20;
+const MAX_SIZE_PERCENT = 80;
+const KEYBOARD_STEP = 2;
+
+type DragAxis = "horizontal" | "vertical";
 
 type DragState = {
-  type: "horizontal" | "vertical" | "both";
-  startX: number;
-  startY: number;
-  startColPercent: number;
-  startRowPercent: number;
+  axis: DragAxis;
+  startPos: number;
+  startPercent: number;
 };
 
 export function ResizablePanes({
@@ -48,17 +50,12 @@ export function ResizablePanes({
 
   // Start drag (mouse)
   const handleMouseDown = useCallback(
-    (type: "horizontal" | "vertical" | "both") => (e: ReactMouseEvent) => {
+    (axis: DragAxis) => (e: ReactMouseEvent) => {
       e.preventDefault();
-      dragStateRef.current = {
-        type,
-        startX: e.clientX,
-        startY: e.clientY,
-        startColPercent: colPercent,
-        startRowPercent: rowPercent,
-      };
-      document.body.style.cursor =
-        type === "horizontal" ? "col-resize" : type === "vertical" ? "row-resize" : "move";
+      const startPos = axis === "horizontal" ? e.clientX : e.clientY;
+      const startPercent = axis === "horizontal" ? colPercent : rowPercent;
+      dragStateRef.current = { axis, startPos, startPercent };
+      document.body.style.cursor = axis === "horizontal" ? "col-resize" : "row-resize";
       document.body.style.userSelect = "none";
     },
     [colPercent, rowPercent],
@@ -66,42 +63,63 @@ export function ResizablePanes({
 
   // Start drag (touch)
   const handleTouchStart = useCallback(
-    (type: "horizontal" | "vertical" | "both") => (e: ReactTouchEvent) => {
+    (axis: DragAxis) => (e: ReactTouchEvent) => {
       const touch = e.touches[0];
       if (!touch) return;
-      dragStateRef.current = {
-        type,
-        startX: touch.clientX,
-        startY: touch.clientY,
-        startColPercent: colPercent,
-        startRowPercent: rowPercent,
-      };
+      const startPos = axis === "horizontal" ? touch.clientX : touch.clientY;
+      const startPercent = axis === "horizontal" ? colPercent : rowPercent;
+      dragStateRef.current = { axis, startPos, startPercent };
     },
     [colPercent, rowPercent],
   );
 
+  // Keyboard handler for accessibility
+  const handleKeyDown = useCallback(
+    (axis: DragAxis) => (e: ReactKeyboardEvent) => {
+      const setter = axis === "horizontal" ? setColPercent : setRowPercent;
+
+      switch (e.key) {
+        case "ArrowLeft":
+        case "ArrowUp":
+          e.preventDefault();
+          setter((prev) => clamp(prev - KEYBOARD_STEP));
+          break;
+        case "ArrowRight":
+        case "ArrowDown":
+          e.preventDefault();
+          setter((prev) => clamp(prev + KEYBOARD_STEP));
+          break;
+        case "Home":
+          e.preventDefault();
+          setter(MIN_SIZE_PERCENT);
+          break;
+        case "End":
+          e.preventDefault();
+          setter(MAX_SIZE_PERCENT);
+          break;
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
-    // Handle mouse move
     const handleMouseMove = (e: MouseEvent): void => {
       const dragState = dragStateRef.current;
       if (!dragState || !containerRef.current) return;
 
       const rect = containerRef.current.getBoundingClientRect();
+      const currentPos = dragState.axis === "horizontal" ? e.clientX : e.clientY;
+      const size = dragState.axis === "horizontal" ? rect.width : rect.height;
+      const deltaPercent = ((currentPos - dragState.startPos) / size) * 100;
+      const newPercent = clamp(dragState.startPercent + deltaPercent);
 
-      if (dragState.type === "horizontal" || dragState.type === "both") {
-        const deltaX = e.clientX - dragState.startX;
-        const deltaPercent = (deltaX / rect.width) * 100;
-        setColPercent(clamp(dragState.startColPercent + deltaPercent));
-      }
-
-      if (dragState.type === "vertical" || dragState.type === "both") {
-        const deltaY = e.clientY - dragState.startY;
-        const deltaPercent = (deltaY / rect.height) * 100;
-        setRowPercent(clamp(dragState.startRowPercent + deltaPercent));
+      if (dragState.axis === "horizontal") {
+        setColPercent(newPercent);
+      } else {
+        setRowPercent(newPercent);
       }
     };
 
-    // Handle touch move
     const handleTouchMove = (e: TouchEvent): void => {
       const dragState = dragStateRef.current;
       if (!dragState || !containerRef.current) return;
@@ -109,25 +127,21 @@ export function ResizablePanes({
       const touch = e.touches[0];
       if (!touch) return;
 
-      // Prevent scrolling while dragging
       e.preventDefault();
 
       const rect = containerRef.current.getBoundingClientRect();
+      const currentPos = dragState.axis === "horizontal" ? touch.clientX : touch.clientY;
+      const size = dragState.axis === "horizontal" ? rect.width : rect.height;
+      const deltaPercent = ((currentPos - dragState.startPos) / size) * 100;
+      const newPercent = clamp(dragState.startPercent + deltaPercent);
 
-      if (dragState.type === "horizontal" || dragState.type === "both") {
-        const deltaX = touch.clientX - dragState.startX;
-        const deltaPercent = (deltaX / rect.width) * 100;
-        setColPercent(clamp(dragState.startColPercent + deltaPercent));
-      }
-
-      if (dragState.type === "vertical" || dragState.type === "both") {
-        const deltaY = touch.clientY - dragState.startY;
-        const deltaPercent = (deltaY / rect.height) * 100;
-        setRowPercent(clamp(dragState.startRowPercent + deltaPercent));
+      if (dragState.axis === "horizontal") {
+        setColPercent(newPercent);
+      } else {
+        setRowPercent(newPercent);
       }
     };
 
-    // Handle drag end (mouse and touch)
     const handleDragEnd = (): void => {
       if (dragStateRef.current) {
         dragStateRef.current = null;
@@ -153,11 +167,10 @@ export function ResizablePanes({
 
   // Reset to 50/50 on double-click
   const handleDoubleClick = useCallback(
-    (type: "horizontal" | "vertical" | "both") => () => {
-      if (type === "horizontal" || type === "both") {
+    (axis: DragAxis) => () => {
+      if (axis === "horizontal") {
         setColPercent(50);
-      }
-      if (type === "vertical" || type === "both") {
+      } else {
         setRowPercent(50);
       }
     },
@@ -178,73 +191,46 @@ export function ResizablePanes({
       {/* Top-left pane */}
       <div className="ResizablePanes-pane ResizablePanes-topLeft">{topLeft}</div>
 
-      {/* Vertical handle (between top-left and top-right) */}
-      <div
-        className="ResizablePanes-handle ResizablePanes-handle--vertical ResizablePanes-handle--top"
-        onMouseDown={handleMouseDown("horizontal")}
-        onTouchStart={handleTouchStart("horizontal")}
-        onDoubleClick={handleDoubleClick("horizontal")}
-        role="separator"
-        aria-orientation="vertical"
-        aria-label="Resize left and right panes"
-        tabIndex={0}
-      />
-
       {/* Top-right pane */}
       <div className="ResizablePanes-pane ResizablePanes-topRight">{topRight}</div>
-
-      {/* Horizontal handle (between top row and bottom row) */}
-      <div
-        className="ResizablePanes-handle ResizablePanes-handle--horizontal ResizablePanes-handle--left"
-        onMouseDown={handleMouseDown("vertical")}
-        onTouchStart={handleTouchStart("vertical")}
-        onDoubleClick={handleDoubleClick("vertical")}
-        role="separator"
-        aria-orientation="horizontal"
-        aria-label="Resize top and bottom panes"
-        tabIndex={0}
-      />
-
-      {/* Center intersection handle */}
-      <div
-        className="ResizablePanes-handle ResizablePanes-handle--intersection"
-        onMouseDown={handleMouseDown("both")}
-        onTouchStart={handleTouchStart("both")}
-        onDoubleClick={handleDoubleClick("both")}
-        role="separator"
-        aria-label="Resize all panes"
-        tabIndex={0}
-      />
-
-      {/* Horizontal handle (right side) */}
-      <div
-        className="ResizablePanes-handle ResizablePanes-handle--horizontal ResizablePanes-handle--right"
-        onMouseDown={handleMouseDown("vertical")}
-        onTouchStart={handleTouchStart("vertical")}
-        onDoubleClick={handleDoubleClick("vertical")}
-        role="separator"
-        aria-orientation="horizontal"
-        aria-label="Resize top and bottom panes"
-        tabIndex={0}
-      />
 
       {/* Bottom-left pane */}
       <div className="ResizablePanes-pane ResizablePanes-bottomLeft">{bottomLeft}</div>
 
-      {/* Vertical handle (between bottom-left and bottom-right) */}
+      {/* Bottom-right pane */}
+      <div className="ResizablePanes-pane ResizablePanes-bottomRight">{bottomRight}</div>
+
+      {/* Vertical divider (full height) - controls column split */}
       <div
-        className="ResizablePanes-handle ResizablePanes-handle--vertical ResizablePanes-handle--bottom"
+        className="ResizablePanes-divider ResizablePanes-divider--vertical"
         onMouseDown={handleMouseDown("horizontal")}
         onTouchStart={handleTouchStart("horizontal")}
         onDoubleClick={handleDoubleClick("horizontal")}
+        onKeyDown={handleKeyDown("horizontal")}
         role="separator"
         aria-orientation="vertical"
-        aria-label="Resize left and right panes"
+        aria-label="Resize left and right columns"
+        aria-valuenow={Math.round(colPercent)}
+        aria-valuemin={MIN_SIZE_PERCENT}
+        aria-valuemax={MAX_SIZE_PERCENT}
         tabIndex={0}
       />
 
-      {/* Bottom-right pane */}
-      <div className="ResizablePanes-pane ResizablePanes-bottomRight">{bottomRight}</div>
+      {/* Horizontal divider (full width) - controls row split */}
+      <div
+        className="ResizablePanes-divider ResizablePanes-divider--horizontal"
+        onMouseDown={handleMouseDown("vertical")}
+        onTouchStart={handleTouchStart("vertical")}
+        onDoubleClick={handleDoubleClick("vertical")}
+        onKeyDown={handleKeyDown("vertical")}
+        role="separator"
+        aria-orientation="horizontal"
+        aria-label="Resize top and bottom rows"
+        aria-valuenow={Math.round(rowPercent)}
+        aria-valuemin={MIN_SIZE_PERCENT}
+        aria-valuemax={MAX_SIZE_PERCENT}
+        tabIndex={0}
+      />
     </div>
   );
 }
